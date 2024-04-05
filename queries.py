@@ -576,5 +576,207 @@ cntrycode;
 '''
 }
 
+queries2 = {
+'q17_drop_view':'''
+DROP VIEW newTable;''',
+'q17_create_view':'''
+create view newTable as
+
+select
+    l_extendedprice,
+    l_quantity 
+
+from
+
+    lineitem
+
+join
+
+    part on part.p_partkey = lineitem.l_partkey
+
+where
+
+    part.p_brand = 'Brand#52'
+
+    and part.p_container = 'JUMBO CAN';''', 
+
+'q17_call':'''
+
+select
+
+    sum(l_extendedprice) / 7.0 as avg_yearly
+
+from
+
+    newTable
+
+where
+
+    l_quantity < (
+
+        select
+
+            0.2 * avg(l_quantity)
+
+        from
+
+            newTable
+
+    );
+''', 
+'q22_v3':'''WITH customer_avg AS (
+    SELECT
+        AVG(C_acctbal) AS avg_acctbal
+    FROM
+        Customer
+    WHERE
+        C_acctbal > 0.00
+        AND SUBSTR(C_phone, 1, 2) IN ('41', '28', '39', '21', '24', '29', '44')
+), filtered_customers AS (
+    SELECT
+        SUBSTR(C_phone, 1, 2) AS cntrycode,
+        C_acctbal
+    FROM
+        Customer
+    LEFT JOIN Orders ON C_custkey = O_custkey
+    WHERE
+        SUBSTR(C_phone, 1, 2) IN ('41', '28', '39', '21', '24', '29', '44')
+        AND C_acctbal > (SELECT avg_acctbal FROM customer_avg)
+        AND O_custkey IS NULL
+)
+SELECT
+    cntrycode,
+    COUNT(*) AS numcust,
+    SUM(C_acctbal) AS totacctbal
+FROM
+    filtered_customers
+GROUP BY
+    cntrycode
+ORDER BY
+    cntrycode;
+
+
+'''
+}
+
+queries3 = {
+'q22_V2': '''
+select
+         cntrycode,
+         count(*) as numcust,
+         sum(c_acctbal) as totacctbal
+ from
+         (
+                 select
+                         substr(c_phone, 1, 2) as cntrycode,
+                         c_acctbal
+                 from
+                         customer
+                 where
+                         substr(c_phone, 1, 2) in
+                                 ('41', '28', '39', '21', '24', '29', '44')
+                         and c_acctbal > (
+                                 select
+                                         avg(c_acctbal)
+                                 from
+                                         customer
+                                 where
+                                         c_acctbal > 0.00
+                                         and substr(c_phone, 1, 2) in
+                                                 ('41', '28', '39', '21', '24', '29', '44')
+                         )
+                         and not exists (
+                                 select
+                                         1
+                                 from
+                                         orders
+                                 where
+                                         o_custkey = c_custkey
+                         )
+         ) as custsale
+ group by
+         cntrycode
+ order by
+         cntrycode;
+
+'''
+}
+
+queries4 = {
+    'q22_v4':'''SELECT
+    substr(c_phone, 1, 2) as cntrycode,
+    COUNT(*) as numcust,
+    SUM(c_acctbal) as totacctbal
+FROM
+    customer
+WHERE
+    substr(c_phone, 1, 2) IN ('41', '28', '39', '21', '24', '29', '44')
+    AND c_acctbal > (
+        SELECT
+            AVG(c_acctbal)
+        FROM
+            customer
+        WHERE
+            c_acctbal > 0.00
+            AND substr(c_phone, 1, 2) IN ('41', '28', '39', '21', '24', '29', '44')
+    )
+    AND NOT EXISTS (
+        SELECT
+            1
+        FROM
+            orders
+        WHERE
+            o_custkey = c_custkey
+    )
+GROUP BY
+    cntrycode
+ORDER BY
+    cntrycode;
+''',
+'q22_v3':'''WITH customer_avg AS (
+    SELECT
+        AVG(C_acctbal) AS avg_acctbal
+    FROM
+        Customer
+    WHERE
+        C_acctbal > 0.00
+        AND SUBSTR(C_phone, 1, 2) IN ('41', '28', '39', '21', '24', '29', '44')
+), filtered_customers AS (
+    SELECT
+        SUBSTR(C_phone, 1, 2) AS cntrycode,
+        C_acctbal
+    FROM
+        Customer
+    LEFT JOIN Orders ON C_custkey = O_custkey
+    WHERE
+        SUBSTR(C_phone, 1, 2) IN ('41', '28', '39', '21', '24', '29', '44')
+        AND C_acctbal > (SELECT avg_acctbal FROM customer_avg)
+        AND O_custkey IS NULL
+)
+SELECT
+    cntrycode,
+    COUNT(*) AS numcust,
+    SUM(C_acctbal) AS totacctbal
+FROM
+    filtered_customers
+GROUP BY
+    cntrycode
+ORDER BY
+    cntrycode;
+
+
+'''
+}
+
+
 def returnQueries():
     return queries
+
+def returnQueries2():
+    return queries2
+
+def returnQueries3():
+    return queries3
+
+def returnQueries4():
+    return queries4
